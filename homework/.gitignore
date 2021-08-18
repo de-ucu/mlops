@@ -4,3 +4,4 @@ models/*
 dvc_storage/*
 /data
 /models
+/model
