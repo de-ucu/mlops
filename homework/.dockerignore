@@ -1,4 +1,7 @@
 data
-models
+model
 .dvc
 dvc_storage
+automl
+.ipynb_checkpoints
+onnx

@@ -1,11 +1,13 @@
 services:
-    tensorflow:
-      build: .
+    model-preparation:
+      build: ./services/model-preparation/
       volumes:
         - ./data:/data
-        - ./models:/models
-        - ./notebooks:/notebooks
-        - ./scripts:/scripts
+        - ./model:/model
+        - ./automl:/automl
+        - ./services/model-preparation/notebooks:/notebooks
+        - ./services/model-preparation/scripts:/scripts
+        - ./onnx:/onnx
       ports:
         - 8888:8888
       deploy:
@@ -18,3 +20,27 @@ services:
         NCCL_DEBUG: 'warn'
       shm_size: '2gb'
       command: jupyter lab --notebook-dir=/notebooks
+
+    triton:
+      container_name: triton
+      image: nvcr.io/nvidia/tritonserver:21.02-py3
+      restart: on-failure
+      volumes:
+          - ./onnx:/models
+      deploy:
+          resources:
+              reservations:
+                  devices:
+                      - capabilities: [gpu]
+      shm_size: '2gb'
+      command: tritonserver --model-repository=/models
+      healthcheck:
+        test: ["CMD", "curl", "-f", "localhost:8000/v2/health/ready"]
+        interval: 5s
+        timeout: 5s
+        retries: 10
+
+    api:
+      build: ./services/api/
+      ports:
+        - 5000:5000
